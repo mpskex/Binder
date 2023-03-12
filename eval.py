@@ -35,8 +35,9 @@ EXAMPLE_TABLES = {
 
 keys = None
 with open('key.txt') as f:
-    keys = [l.split('\n')[0] for l in f.readlines()]
+    keys = [l.split('\n')[0] for l in f.readlines() if l[:3] == 'sk-']
 
+print(keys)
 
 import nltk
 
@@ -60,7 +61,6 @@ class Args:
     verbose = False
 
 args = Args()
-keys = key
 
 selected_table_title = list(EXAMPLE_TABLES.keys())[0]
 selected_language = ("Binder-SQL", "Binder-Python")[0]
