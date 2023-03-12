@@ -99,7 +99,8 @@ class Generator(object):
         for p in prompts:
             result_idx_to_eid.extend([p[0]] * self.args.sampling_n)
         prompts = [p[1] for p in prompts]
-
+        start_time = time.time()
+        
         result = self._call_codex_api(
             engine=self.args.engine,
             prompt=prompts,
@@ -107,8 +108,11 @@ class Generator(object):
             temperature=self.args.temperature,
             top_p=self.args.top_p,
             n=self.args.sampling_n,
-            stop=self.args.stop_tokens
+            stop=self.args.stop_tokens,
+            verbose=verbose
         )
+        if verbose:
+            print(f'Openai api one inference time: {time.time() - start_time}')
 
         if verbose:
             print('\n', '*' * 20, 'Codex API Call', '*' * 20)
@@ -151,7 +155,8 @@ class Generator(object):
             temperature: float,
             top_p: float,
             n: int,
-            stop: List[str]
+            stop: List[str],
+            verbose = False,
     ):
         start_time = time.time()
         result = None
@@ -159,7 +164,8 @@ class Generator(object):
             try:
                 key = self.keys[self.current_key_id]
                 self.current_key_id = (self.current_key_id + 1) % len(self.keys)
-                print(f"Using openai api key: {key}")
+                if verbose:
+                    print(f"Using openai api key: {key}")
                 result = openai.Completion.create(
                     engine=engine,
                     prompt=prompt,
@@ -171,8 +177,9 @@ class Generator(object):
                     stop=stop,
                     logprobs=1
                 )
-                print('Openai api inference time:', time.time() - start_time)
+                if verbose:
+                    print('Openai api inference time:', time.time() - start_time)
                 return result
             except Exception as e:
                 print(e, 'Retry.')
-                time.sleep(5)
+                time.sleep(10)

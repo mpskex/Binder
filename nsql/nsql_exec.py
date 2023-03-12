@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict
 from nsql.qa_module.openai_qa import OpenAIQAModel
 from nsql.qa_module.vqa import vqa_call
@@ -22,13 +23,16 @@ class Executor(object):
         result = db.execute_query(sql)
         return result
 
-    def nsql_exec(self, nsql: str, db: NeuralDB, verbose=True):
+    def nsql_exec(self, nsql: str, db: NeuralDB, verbose=True, stamp=None):
         steps = []
         root_node = get_cfg_tree(nsql)  # Parse execution tree from nsql.
         get_steps(root_node, steps)  # Flatten the execution tree and get the steps.
         steps = remove_duplicate(steps)  # Remove the duplicate steps.
         if verbose:
             print("Steps:", [s.rename for s in steps])
+        if stamp:
+            with open("tmp_for_vis/{}_tmp_for_vis_steps.txt".format(stamp), "w") as f:
+                json.dump([s.rename for s in steps], f)
         col_idx = 0
         for step in steps:
             # All steps should be formatted as 'QA()' except for last step which could also be normal SQL.
@@ -117,6 +121,11 @@ class Executor(object):
                                                            qa_type="map",
                                                            new_col_name_s=step.produced_col_name_s,
                                                            verbose=verbose)
+                        if stamp:
+                            with open("tmp_for_vis/{}_result_step_{}_input.txt".format(stamp, steps.index(step)), "w") as f:
+                                json.dump(sql_executed_sub_tables, f)
+                            with open("tmp_for_vis/{}_result_step_{}.txt".format(stamp, steps.index(step)), "w") as f:
+                                json.dump(sub_table, f)
                         db.add_sub_table(sub_table, verbose=verbose)
                         col_idx += 1
                     else:  # This step is the final step
@@ -126,6 +135,11 @@ class Executor(object):
                                                            qa_type="map",
                                                            new_col_name_s=["col_{}".format(col_idx)],
                                                            verbose=verbose)
+                        if stamp:
+                            with open("tmp_for_vis/{}_result_step_{}_input.txt".format(stamp, steps.index(step)), "w") as f:
+                                json.dump(sql_executed_sub_tables, f)
+                            with open("tmp_for_vis/{}_result_step_{}.txt".format(stamp, steps.index(step)), "w") as f:
+                                json.dump(sub_table, f)
                         return extract_answers(sub_table)
 
                 elif question.lower().startswith("ans@"):
@@ -136,6 +150,11 @@ class Executor(object):
                                                     table_title=db.table_title,
                                                     qa_type="ans",
                                                     verbose=verbose)
+                    if stamp:
+                        with open("tmp_for_vis/{}_result_step_{}_input.txt".format(stamp, steps.index(step)), "w") as f:
+                            json.dump(sql_executed_sub_tables, f)
+                        with open("tmp_for_vis/{}_result_step_{}.txt".format(stamp, steps.index(step)), "w") as f:
+                            json.dump(answer, f)
                     if step.father:
                         step.rename_father_val(answer)
                     else:  # This step is the final step
@@ -147,4 +166,7 @@ class Executor(object):
 
             else:
                 sub_table = self.sql_exec(nsql, db, verbose=verbose)
+                if stamp:
+                    with open("tmp_for_vis/{}_result_step_{}.txt".format(stamp, steps.index(step)), "w") as f:
+                        json.dump(sub_table, f)
                 return extract_answers(sub_table)
