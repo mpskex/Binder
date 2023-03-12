@@ -49,16 +49,9 @@ def load_data():
 
 @st.cache
 def get_key():
-    # # print the public IP of the demo machine
-    # ip = requests.get('https://checkip.amazonaws.com').text.strip()
-    # print(ip)
-
-    # URL = "http://54.242.37.195:8080/api/predict"
-    # # The springboard machine we built to protect the key, 20217 is the birthday of Tianbao's girlfriend
-    # # we will only let the demo machine have the access to the keys
-
-    # one_key = requests.post(url=URL, json={"data": "Hi, binder server. Give me a key!"}).json()['data'][0]
-    return "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"
+    with open('key.txt') as f:
+        keys = [l.split('\n')[0] for l in f.readlines()]
+    return keys[0]
 
 
 def read_markdown(path):

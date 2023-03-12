@@ -32,10 +32,10 @@ EXAMPLE_TABLES = {
     "Nissan SR20DET": (438, "which car has power more than 170 kw?"),
     # ''
 }
-key = [
-    "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", 
-    "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"
-    ]
+
+keys = None
+with open('key.txt') as f:
+    keys = [l.split('\n')[0] for l in f.readlines()]
 
 
 import nltk
